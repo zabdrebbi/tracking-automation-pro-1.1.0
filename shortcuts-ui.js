@@ -29,6 +29,23 @@
   const toast = msg => { if (typeof showToast === 'function') showToast(msg); };
   const genUid = () => 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   const cloneDefaults = () => TAP_DEFAULT_SHORTCUTS.map(s => ({ ...s }));
+  const DEFAULT_BY_ABBR = new Map(TAP_DEFAULT_SHORTCUTS.map(d => [d.abbr, d]));
+
+  // إصلاح البيانات القديمة: ضمان uid فريد لكل اختصار وإعادة ربط الافتراضية بمعرّفها الجديد
+  function normalize(arr) {
+    const seen = new Set();
+    return arr.map(s => {
+      if (!s || typeof s.text !== 'string') return s;
+      let uid = s.uid;
+      if (s.isDefault) {
+        const def = DEFAULT_BY_ABBR.get(s.abbr);
+        if (def) uid = def.uid;
+      }
+      if (!uid || seen.has(uid)) uid = genUid();
+      seen.add(uid);
+      return uid === s.uid ? s : { ...s, uid };
+    });
+  }
 
   // ---------- التبويبات ----------
   function selectTab(name) {
@@ -42,7 +59,8 @@
   async function load() {
     const data = await chrome.storage.local.get([KEY, TAB_KEY]);
     if (Array.isArray(data[KEY])) {
-      list = data[KEY];
+      list = normalize(data[KEY]);
+      if (list.some((s, i) => s !== data[KEY][i])) await persist(); // حفظ الإصلاح
     } else {
       list = cloneDefaults();            // أول تشغيل: نحفظ الافتراضية
       await persist();
@@ -111,9 +129,12 @@
       );
       tdActions.appendChild(wrap);
 
+      const tdText = cell('cell-text', sc.text.replace(/\s+/g, ' '), sc.text);
+      tdText.dir = 'auto';
+
       tr.append(
         tdAbbr,
-        cell('cell-text', sc.text.replace(/\s+/g, ' '), sc.text),
+        tdText,
         cell('cell-id', sc.fieldId || '—', sc.fieldId ? 'id="' + sc.fieldId + '"' : ''),
         tdActions
       );
