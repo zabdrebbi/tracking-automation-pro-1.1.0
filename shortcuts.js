@@ -126,7 +126,7 @@
           background:#1e293b;color:#fff;font:500 12px/1.4 system-ui,"Segoe UI",Tahoma,sans-serif;
           padding:6px 10px;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.25);pointer-events:none}
         .tip.show{display:flex}
-        kbd{flex:none;font:600 11px ui-monospace,Consolas,monospace;background:#3b82f6;color:#fff;
+        kbd{flex:none;font:600 11px ui-monospace,Consolas,monospace;background:#dc3545;color:#fff;
           border-radius:4px;padding:2px 6px}
         .lbl{flex:none;opacity:.7}
         .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}

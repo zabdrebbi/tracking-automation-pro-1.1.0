@@ -8,9 +8,9 @@
   --bg-hover: #e2e6ed;
   --border: #d5dae3;
   --border-light: #c8cfd9;
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-glow: rgba(59, 130, 246, 0.1);
+  --accent: #dc3545;
+  --accent-hover: #bb2d3b;
+  --accent-glow: rgba(220, 53, 69, 0.1);
   --green: #16a34a;
   --green-dim: rgba(22, 163, 74, 0.08);
   --yellow: #d97706;
@@ -76,7 +76,7 @@ html, body {
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 0 16px rgba(59,130,246,0.25);
+  box-shadow: 0 0 16px rgba(220,53,69,0.25);
 }
 
 .header-text h1 {
@@ -178,7 +178,7 @@ html, body {
 }
 
 .stat.accent {
-  border-color: rgba(59,130,246,0.3);
+  border-color: rgba(220,53,69,0.3);
   background: var(--accent-glow);
 }
 
@@ -221,7 +221,7 @@ html, body {
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--accent) 0%, #60a5fa 100%);
+  background: linear-gradient(90deg, var(--accent) 0%, #ef8a95 100%);
   border-radius: var(--radius-sm);
   transition: width 0.3s ease;
   position: relative;
@@ -363,14 +363,14 @@ html, body {
 }
 
 .toggle input:checked + .toggle-slider {
-  background: rgba(59,130,246,0.2);
+  background: rgba(220,53,69,0.2);
   border-color: var(--accent);
 }
 
 .toggle input:checked + .toggle-slider::before {
   background: var(--accent);
   right: calc(100% - 16px);
-  box-shadow: 0 0 8px rgba(59,130,246,0.5);
+  box-shadow: 0 0 8px rgba(220,53,69,0.5);
 }
 
 .delay-control {
@@ -434,12 +434,12 @@ html, body {
   background: var(--accent);
   border-color: var(--accent);
   color: white;
-  box-shadow: 0 2px 12px rgba(59,130,246,0.25);
+  box-shadow: 0 2px 12px rgba(220,53,69,0.25);
 }
 
 .btn-start:hover:not(:disabled) {
   background: var(--accent-hover);
-  box-shadow: 0 2px 16px rgba(59,130,246,0.4);
+  box-shadow: 0 2px 16px rgba(220,53,69,0.4);
   transform: translateY(-1px);
 }
 
@@ -557,7 +557,7 @@ html, body {
 }
 
 .badge-pending { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); }
-.badge-processing { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(59,130,246,0.3); }
+.badge-processing { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(220,53,69,0.3); }
 .badge-inserted { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
 .badge-submitted { background: var(--green-dim); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
 .badge-error { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
@@ -565,7 +565,7 @@ html, body {
 /* ===== CURRENT ITEM ===== */
 .current-item {
   background: var(--accent-glow);
-  border-top: 1px solid rgba(59,130,246,0.3);
+  border-top: 1px solid rgba(220,53,69,0.3);
   padding: 10px 16px;
   display: flex;
   align-items: center;
