@@ -877,6 +877,40 @@ html, body {
 
 .ys-search-btn { width: 100%; padding: 10px; }
 
+.ys-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ys-btn-row .ys-search-btn {
+  flex: 2;
+}
+
+.btn-print {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-print:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+
 .ys-detected {
   font-family: var(--sans);
   font-size: 11px;

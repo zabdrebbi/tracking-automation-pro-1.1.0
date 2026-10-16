@@ -8,6 +8,7 @@
   window.__tapQuickSearchLoaded = true;
 
   const YALIDINE_BASE_URL = 'https://yalidine.app/app/colis/index.php';
+  const BORDEREAU_URL = 'https://yalidine.app/app/bordereau.php';
   const HISTORY_KEY = 'ysSearchHistory';
   const HIJACK_KEY = 'ysHijackEnabled';
   const isTopFrame = window.top === window.self;
@@ -192,6 +193,14 @@
         }
         button.go:hover { background: #bb2d3b; transform: translateY(-1px); }
         button.go svg { width: 14px; height: 14px; }
+        button.print {
+          flex: none; display: flex; align-items: center; justify-content: center;
+          background: #eef1f6; border: 1px solid #c8cfd9; color: #475569; border-radius: 5px;
+          padding: 0 14px; cursor: pointer; transition: all 0.2s;
+          font-family: 'Cairo','Segoe UI',Tahoma,sans-serif;
+        }
+        button.print:hover { border-color: #dc3545; color: #dc3545; background: rgba(220,53,69,0.1); }
+        button.print svg { width: 16px; height: 16px; }
         .msg { font-size: 12px; min-height: 18px; }
         .msg:empty { display: none; }
         .msg.err { color: #dc2626; }
@@ -216,6 +225,7 @@
             <form class="row">
               <input type="text" placeholder="رقم الهاتف أو رقم التتبع" autocomplete="off" spellcheck="false" />
               <button class="go" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>بحث</button>
+              <button class="print" type="button" title="طباعة الملصق (لأرقام التتبع)" aria-label="طباعة الملصق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
             </form>
             <div class="msg"></div>
             <div class="hint"><b>Enter</b> للبحث &nbsp;•&nbsp; <b>Esc</b> للإغلاق &nbsp;•&nbsp; يُكتشف نوع الإدخال تلقائيًا</div>
@@ -231,6 +241,7 @@
 
     // submit عبر form: يعمل مع Enter بشكل موثوق حتى لو اعترضت الصفحة حدث keydown
     form.addEventListener('submit', e => { e.preventDefault(); doSearch(); });
+    form.querySelector('button.print').addEventListener('click', e => { e.preventDefault(); doPrint(); });
     // Esc للإغلاق (keydown على الحقل + احتياطي على مستوى الـ shadow root بطور الفقاعة فقط)
     inputEl.addEventListener('keydown', e => {
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
@@ -286,6 +297,23 @@
     } catch (_) { /* التخزين غير متاح — نتابع البحث */ }
     showMsg('تم فتح صفحة البحث بنجاح: ' + result.value, true);
     location.href = url;
+  }
+
+  // الطباعة: لأرقام التتبع فقط، تفتح رابط bordereau في تبويب جديد دائمًا
+  async function doPrint() {
+    const result = detectAndProcess(inputEl.value);
+    if (result.error) { showMsg(result.error, false); return; }
+    if (result.type !== 'tracking') { showMsg('الطباعة متاحة لأرقام التتبع فقط.', false); return; }
+    const url = `${BORDEREAU_URL}?tracking=${encodeURIComponent(result.value)}`;
+    try {
+      const data = await chrome.storage.local.get([HISTORY_KEY]);
+      const history = Array.isArray(data[HISTORY_KEY]) ? data[HISTORY_KEY] : [];
+      const next = [{ value: result.value, type: result.type, timestamp: Date.now() },
+        ...history.filter(h => h && h.value !== result.value)].slice(0, 50);
+      await chrome.storage.local.set({ [HISTORY_KEY]: next });
+    } catch (_) { /* التخزين غير متاح — نتابع الطباعة */ }
+    showMsg('تم فتح صفحة الطباعة بنجاح: ' + result.value, true);
+    window.open(url, '_blank', 'noopener');
   }
 
   // ---------- نافذة سجل البحث العائمة (Ctrl+Shift+H) ----------

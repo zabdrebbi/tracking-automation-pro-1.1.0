@@ -6,6 +6,7 @@
   'use strict';
 
   const YALIDINE_BASE_URL = 'https://yalidine.app/app/colis/index.php';
+  const BORDEREAU_URL = 'https://yalidine.app/app/bordereau.php';
   const HISTORY_KEY = 'ysSearchHistory';
   const NEW_TAB_KEY = 'ysNewTabPreference';
   const HIJACK_KEY = 'ysHijackEnabled';
@@ -16,6 +17,7 @@
     input: byId('ysInput'),
     clear: byId('ysClearBtn'),
     search: byId('ysSearchBtn'),
+    print: byId('ysPrintBtn'),
     newTab: byId('ysNewTab'),
     hijack: byId('ysHijack'),
     error: byId('ysError'),
@@ -93,9 +95,9 @@
     els.error.textContent = text;
   }
 
-  function showSuccess(type, value) {
+  function showSuccess(type, value, msg) {
     clearMessages();
-    els.success.textContent = 'تم فتح صفحة البحث بنجاح.';
+    els.success.textContent = msg || 'تم فتح صفحة البحث بنجاح.';
     els.detected.textContent = type === 'phone' ? 'هاتف: ' : 'تتبع: ';
     const val = document.createElement('bdi');
     val.textContent = value;
@@ -203,9 +205,29 @@
     els.input.value = '';
   }
 
+  // ---------- الطباعة (لأرقام التتبع فقط، دائمًا في تبويب جديد) ----------
+  function performPrint() {
+    const result = detectAndProcess(els.input.value);
+    if (result.error) {
+      showError(result.error);
+      return;
+    }
+    if (result.type !== 'tracking') {
+      showError('الطباعة متاحة لأرقام التتبع فقط.');
+      return;
+    }
+
+    const url = `${BORDEREAU_URL}?tracking=${encodeURIComponent(result.value)}`;
+    chrome.tabs.create({ url });
+
+    addToHistory(result.type, result.value);
+    showSuccess(result.type, result.value, 'تم فتح صفحة الطباعة بنجاح.');
+  }
+
   // ---------- تشغيل ----------
   async function init() {
     els.search.addEventListener('click', performSearch);
+    els.print.addEventListener('click', performPrint);
     // Ctrl+Shift+F داخل الـ popup: انتقال لتبويب البحث + تركيز الحقل
     document.addEventListener('keydown', e => {
       const mod = e.ctrlKey || e.metaKey;
