@@ -1,5 +1,5 @@
 // ===== TRACKING AUTOMATION PRO - SHORTCUTS-UI.JS =====
-// مسؤول عن: التبديل بين التبويبين + إدارة الاختصارات (إضافة / تعديل / حذف / استعادة الافتراضية)
+// مسؤول عن: التبديل بين التبويبات (التتبع / الاختصارات / بحث ياليدين) + إدارة الاختصارات (إضافة / تعديل / حذف / استعادة الافتراضية)
 
 (() => {
   'use strict';
@@ -10,7 +10,7 @@
 
   const els = {
     tabs: document.querySelectorAll('.tab'),
-    panels: { tracking: byId('tab-tracking'), shortcuts: byId('tab-shortcuts') },
+    panels: { tracking: byId('tab-tracking'), shortcuts: byId('tab-shortcuts'), search: byId('tab-search') },
     formTitle: byId('scFormTitle'),
     abbr: byId('scAbbr'),
     fieldId: byId('scFieldId'),
@@ -53,6 +53,7 @@
     els.tabs.forEach(btn => btn.setAttribute('aria-selected', String(btn.dataset.tab === name)));
     Object.entries(els.panels).forEach(([key, panel]) => { panel.hidden = key !== name; });
     chrome.storage.local.set({ [TAB_KEY]: name });
+    document.dispatchEvent(new CustomEvent('tap:tabchange', { detail: name }));
   }
 
   // ---------- التخزين ----------
@@ -249,7 +250,7 @@
 
     const lastTab = await load();
     render();
-    selectTab(lastTab === 'shortcuts' ? 'shortcuts' : 'tracking');
+    selectTab(['shortcuts', 'search'].includes(lastTab) ? lastTab : 'tracking');
   }
 
   document.addEventListener('DOMContentLoaded', init);

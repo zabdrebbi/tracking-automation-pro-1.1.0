@@ -1,6 +1,22 @@
 /* ===== TRACKING AUTOMATION PRO - POPUP STYLES ===== */
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Cairo:wght@400;500;600;700&display=swap');
 
+/* خطوط محلية مضمنة مع الإضافة (تعمل دون إنترنت وتتجاوز حجب Google Fonts) */
+@font-face {
+  font-family: 'Cairo';
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url('fonts/Cairo.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('fonts/IBMPlexMono-Var.ttf') format('truetype');
+}
+
 :root {
   --bg-primary: #f5f7fa;
   --bg-secondary: #ffffff;
@@ -611,7 +627,7 @@ html, body {
 /* ===== TABS ===== */
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
 }
@@ -620,13 +636,13 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 8px;
+  gap: 5px;
+  padding: 10px 4px;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -810,6 +826,111 @@ html, body {
   padding: 0 5px;
   color: var(--text-secondary);
 }
+
+
+
+/* ===== YALIDINE SEARCH TAB ===== */
+.ys-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ys-form .control-row {
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+
+.ys-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ys-input {
+  font-size: 13px;
+  padding: 10px 12px 10px 34px;
+  letter-spacing: 0.3px;
+}
+
+.ys-input::placeholder {
+  color: var(--text-muted);
+  direction: rtl;
+  text-align: right;
+  font-family: var(--sans);
+  letter-spacing: 0;
+}
+
+.ys-clear {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.ys-clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.ys-search-btn { width: 100%; padding: 10px; }
+
+.ys-detected {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ys-detected bdi { font-family: var(--mono); }
+
+.ys-detected:empty { display: none; }
+
+.ys-success {
+  font-size: 11.5px;
+  color: var(--green);
+}
+
+.ys-success:empty { display: none; }
+
+.ys-table-wrap { max-height: 210px; }
+
+.ys-table { table-layout: fixed; }
+.ys-table th:nth-child(1) { width: 52%; }
+.ys-table th:nth-child(2) { width: 22%; }
+.ys-table th:nth-child(3) { width: 26%; }
+
+.ys-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ys-table tbody tr.ys-row { cursor: pointer; }
+
+.ys-table .cell-value {
+  direction: ltr;
+  text-align: left;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.ys-table .cell-time { color: var(--text-muted); }
+
+.ys-table tr.ys-date td {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.ys-table tr.ys-date:hover td { background: var(--bg-tertiary); }
+
+.badge-phone { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(220,53,69,0.3); }
+.badge-tracking { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); }
 
 @media (prefers-reduced-motion: reduce) {
   .tab, .sc-input { transition: none; }

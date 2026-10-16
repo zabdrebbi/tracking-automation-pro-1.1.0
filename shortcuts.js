@@ -129,11 +129,25 @@
         kbd{flex:none;font:600 11px ui-monospace,Consolas,monospace;background:#dc3545;color:#fff;
           border-radius:4px;padding:2px 6px}
         .lbl{flex:none;opacity:.7}
-        .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext}
+        .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;unicode-bidi:plaintext;
+          pointer-events:auto;cursor:pointer;background:rgba(255,255,255,.12);color:#fff;
+          border:1px solid rgba(255,255,255,.3);border-radius:4px;padding:2px 8px;
+          font:500 12px/1.4 system-ui,"Segoe UI",Tahoma,sans-serif;max-width:200px}
+        .t:hover{background:#dc3545;border-color:#dc3545}
       </style>
-      <div class="tip"><kbd>Tab</kbd><span class="lbl">coller</span><span class="t"></span></div>`;
+      <div class="tip"><kbd>Tab</kbd><span class="lbl">coller</span><button class="t" type="button"></button></div>`;
     tip = root.querySelector('.tip');
     tipText = root.querySelector('.t');
+    // الضغط بالفأرة على النص يلصق مباشرة (بديل عن Tab) — mousedown ممنوع افتراضيًا للحفاظ على التركيز
+    tipText.addEventListener('mousedown', e => e.preventDefault());
+    tipText.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!activeEl || !activeSc || !isEmpty(activeEl)) return;
+      const target = activeEl, text = activeSc.text;
+      hideTip();
+      pasteInto(target, text);
+    });
     document.documentElement.appendChild(tipHost);
   }
 
@@ -165,6 +179,7 @@
     activeSc = sc;
     const preview = sc.text.replace(/\s+/g, ' ').trim();
     tipText.textContent = preview.length > 60 ? preview.slice(0, 60) + '…' : preview;
+    tipText.title = sc.text;
     tip.classList.add('show');
     positionTip();
   }
