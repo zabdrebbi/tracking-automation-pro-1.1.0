@@ -97,6 +97,64 @@
     return `${YALIDINE_BASE_URL}?${params.toString()}`;
   }
 
+  // رابط القسيمة (bordereau) — لأرقام التتبع فقط
+  function buildPrintUrl(value) {
+    return `${BORDEREAU_URL}?tracking=${encodeURIComponent(value)}`;
+  }
+
+  // ---------- البحث المتعدد (عدة أرقام تتبع دفعة واحدة) ----------
+  const MAX_MULTI = 30;
+
+  // يقسم الإدخال إلى رموز (فراغات/فاصلة/فاصلة منقوطة/أسطر) ويتطلب لكل رمز تتبعًا كاملًا بصيغة yal-AB12CD
+  function parseMultiTrackings(rawInput) {
+    const tokens = (rawInput || '').split(/[\s,;]+/).map(t => t.trim()).filter(Boolean);
+    if (tokens.length < 2) return null; // رمز واحد => مسار البحث الفردي العادي
+
+    const values = [];
+    for (const t of tokens) {
+      if (/^\+?\d+$/.test(t.replace(/[\s\-()]/g, ''))) {
+        return { error: 'البحث المتعدد متاح لأرقام التتبع فقط. أزل أرقام الهاتف من القائمة.' };
+      }
+      const tracking = normalizeTrackingNumber(t);
+      if (!isValidTrackingNumber(tracking)) {
+        return { error: 'البحث المتعدد يتطلب أرقام تتبع كاملة بصيغة yal-AB12CD. تحقق من: ' + t };
+      }
+      if (!values.includes(tracking)) values.push(tracking);
+    }
+    if (values.length < 2) return null;
+    if (values.length > MAX_MULTI) {
+      return { error: 'الحد الأقصى للكتابة المجمعة هو ' + MAX_MULTI + ' رقمًا في المرة الواحدة.' };
+    }
+    return { list: values };
+  }
+
+  // فتح عدة تبويبات من سكربت المحتوى عبر background (لا يمكن فتح عدة نوافذ مباشرة هنا)
+  function openTabs(urls) {
+    if (!urls.length) return;
+    try {
+      chrome.runtime.sendMessage({ type: 'OPEN_TABS', urls }, resp => {
+        if (chrome.runtime.lastError || !resp || !resp.success) {
+          // احتياطي: فتح أول تبويب فقط إذا فشل المرور عبر background
+          try { window.open(urls[0], '_blank', 'noopener'); } catch (_) { /* تجاهل */ }
+        }
+      });
+    } catch (_) {
+      try { window.open(urls[0], '_blank', 'noopener'); } catch (_) { /* تجاهل */ }
+    }
+  }
+
+  async function addManyToHistory(values) {
+    try {
+      let history = await getHistory();
+      const set = new Set(values);
+      history = history.filter(h => h && !set.has(h.value));
+      const now = Date.now();
+      const fresh = values.map(value => ({ value, type: 'tracking', timestamp: now }));
+      history = [...fresh, ...history];
+      await chrome.storage.local.set({ [HISTORY_KEY]: history.slice(0, 50) });
+    } catch (_) { /* التخزين غير متاح */ }
+  }
+
   // ---------- تنسيق التاريخ (مطابق لـ search.js) ----------
   const formatTime = ts =>
     new Date(ts).toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' });
@@ -223,12 +281,12 @@
           </div>
           <div class="body">
             <form class="row">
-              <input type="text" placeholder="رقم الهاتف أو رقم التتبع" autocomplete="off" spellcheck="false" />
+              <input type="text" placeholder="هاتف أو تتبع، أو عدة تتبعات مفصولة بفاصلة" autocomplete="off" spellcheck="false" />
               <button class="go" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>بحث</button>
               <button class="print" type="button" title="طباعة الملصق (لأرقام التتبع)" aria-label="طباعة الملصق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
             </form>
             <div class="msg"></div>
-            <div class="hint"><b>Enter</b> للبحث &nbsp;•&nbsp; <b>Esc</b> للإغلاق &nbsp;•&nbsp; يُكتشف نوع الإدخال تلقائيًا</div>
+            <div class="hint"><b>Enter</b> للبحث &nbsp;•&nbsp; <b>Esc</b> للإغلاق &nbsp;•&nbsp; عدة أرقام تتبع كاملة (yal-AB12CD) مفصولة بفاصلة تُفتح دفعة واحدة</div>
           </div>
         </div>
       </div>`;
@@ -282,6 +340,15 @@
   }
 
   async function doSearch() {
+    const multi = parseMultiTrackings(inputEl.value);
+    if (multi) {
+      if (multi.error) { showMsg(multi.error, false); return; }
+      await addManyToHistory(multi.list);
+      showMsg('تم فتح ' + multi.list.length + ' نتائج بحث في تبويبات جديدة.', true);
+      openTabs(multi.list.map(value => buildSearchUrl('tracking', value)));
+      return;
+    }
+
     const result = detectAndProcess(inputEl.value);
     if (result.error) { showMsg(result.error, false); return; }
     const url = buildSearchUrl(result.type, result.value);
@@ -301,10 +368,19 @@
 
   // الطباعة: لأرقام التتبع فقط، تفتح رابط bordereau في تبويب جديد دائمًا
   async function doPrint() {
+    const multi = parseMultiTrackings(inputEl.value);
+    if (multi) {
+      if (multi.error) { showMsg(multi.error, false); return; }
+      await addManyToHistory(multi.list);
+      showMsg('تم فتح ' + multi.list.length + ' قسيمة طباعة في تبويبات جديدة.', true);
+      openTabs(multi.list.map(value => buildPrintUrl(value)));
+      return;
+    }
+
     const result = detectAndProcess(inputEl.value);
     if (result.error) { showMsg(result.error, false); return; }
     if (result.type !== 'tracking') { showMsg('الطباعة متاحة لأرقام التتبع فقط.', false); return; }
-    const url = `${BORDEREAU_URL}?tracking=${encodeURIComponent(result.value)}`;
+    const url = buildPrintUrl(result.value);
     try {
       const data = await chrome.storage.local.get([HISTORY_KEY]);
       const history = Array.isArray(data[HISTORY_KEY]) ? data[HISTORY_KEY] : [];
@@ -336,7 +412,7 @@
       .icon-btn:hover{color:#dc2626;background:rgba(220,38,38,0.08)}
       .hlist{max-height:260px;overflow-y:auto;border:1px solid #d5dae3;border-radius:5px}
       .hdate{background:#eef1f6;color:#dc3545;font-size:10.5px;font-weight:700;padding:6px 10px}
-      .hrow{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;
+      .hrow{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;
         padding:7px 10px;cursor:pointer;border-bottom:1px solid #eef1f6;direction:rtl}
       .hrow:last-child{border-bottom:none}
       .hrow:hover{background:#e2e6ed}
@@ -347,6 +423,10 @@
         font-size:10px;font-weight:600;white-space:nowrap}
       .badge.phone{background:rgba(220,53,69,0.1);color:#dc3545;border:1px solid rgba(220,53,69,0.3)}
       .badge.tracking{background:#eef1f6;color:#475569;border:1px solid #d5dae3}
+      .hprint{background:none;border:none;cursor:pointer;color:#94a3b8;padding:2px;border-radius:4px;
+        display:flex;align-items:center;transition:all 0.2s}
+      .hprint:hover{color:#16a34a;background:rgba(22,163,74,0.1)}
+      .hprint svg{width:13px;height:13px}
       .hempty{text-align:center;color:#94a3b8;font-size:12px;padding:16px 10px}`;
     root.appendChild(css);
 
@@ -366,7 +446,7 @@
           </div>
           <div class="body">
             <div class="hlist"></div>
-            <div class="hint">اضغط على أي سطر لإعادة البحث &nbsp;•&nbsp; <b>Esc</b> للإغلاق</div>
+            <div class="hint">اضغط على أي سطر لإعادة البحث &nbsp;•&nbsp; أيقونة الطابعة تفتح القسيمة مباشرة &nbsp;•&nbsp; <b>Esc</b> للإغلاق</div>
           </div>
         </div>
       </div>`;
@@ -437,7 +517,22 @@
       const time = document.createElement('span');
       time.className = 'ht';
       time.textContent = formatTime(item.timestamp);
-      row.append(val, badge, time);
+      row.append(val, badge);
+      if (item.type !== 'phone') {
+        const printBtn = document.createElement('button');
+        printBtn.type = 'button';
+        printBtn.className = 'hprint';
+        printBtn.title = 'طباعة القسيمة';
+        printBtn.setAttribute('aria-label', 'طباعة القسيمة');
+        printBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+        printBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          doHistoryPrint(item.value);
+        });
+        row.appendChild(printBtn);
+      }
+      row.appendChild(time);
       histListEl.appendChild(row);
     });
   }
@@ -452,6 +547,17 @@
       await chrome.storage.local.set({ [HISTORY_KEY]: history.slice(0, 50) });
     } catch (_) { /* التخزين غير متاح — نتابع البحث */ }
     location.href = url;
+  }
+
+  // طباعة من السجل: لأرقام التتبع فقط، تفتح رابط القسيمة مباشرة في تبويب جديد
+  async function doHistoryPrint(value) {
+    const url = `${BORDEREAU_URL}?tracking=${encodeURIComponent(value)}`;
+    try {
+      const history = (await getHistory()).filter(h => h && h.value !== value);
+      history.unshift({ value, type: 'tracking', timestamp: Date.now() });
+      await chrome.storage.local.set({ [HISTORY_KEY]: history.slice(0, 50) });
+    } catch (_) { /* التخزين غير متاح — نتابع الطباعة */ }
+    window.open(url, '_blank', 'noopener');
   }
 
   function openHistory() {

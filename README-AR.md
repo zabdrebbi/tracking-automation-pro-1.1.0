@@ -21,7 +21,7 @@
 شغّل `Run-Update.bat` داخل مجلد الإضافة.
 
 ## التحديث التلقائي
-شغّل `Install-Auto-Check.bat` مرة واحدة داخل مجلد الإضافة. يعمل الفحص كل 6 ساعات في الخلفية بالكامل (لا نافذة، لا فتح متصفح) ويكتب سجلًا في `.tracking-automation-pro-update.log`. لإلغائه شغّل `Remove-Auto-Check.bat`.
+شغّل `Install-Auto-Check.bat` مرة واحدة داخل مجلد الإضافة. يعمل الفحص كل 30 دقيقة في الخلفية بالكامل (لا نافذة، لا فتح متصفح) ويكتب سجلًا في `.tracking-automation-pro-update.log`. لإلغائه شغّل `Remove-Auto-Check.bat`.
 
 ## كيف يعمل؟
 - يفحص أحدث commit في الفرع `main` للمستودع `zabdrebbi/tracking-automation-pro-1.1.0`.

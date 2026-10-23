@@ -18,7 +18,7 @@
         </div>
         <div class="header-text">
           <h1>Tracking Pro</h1>
-          <span class="version">v1.2</span>
+          <span class="version">v1.3</span>
         </div>
       </div>
       <div class="status-indicator" id="connectionStatus">
@@ -40,6 +40,10 @@
       <button class="tab" role="tab" id="tabBtnSearch" data-tab="search" aria-selected="false" aria-controls="tab-search">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>
         بحث ياليدين
+      </button>
+      <button class="tab" role="tab" id="tabBtnFilter" data-tab="filter" aria-selected="false" aria-controls="tab-filter">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/></svg>
+        التصفية
       </button>
     </nav>
 
@@ -234,7 +238,7 @@
         <div class="ys-form">
           <div class="ys-input-wrap">
             <input type="text" id="ysInput" class="sc-input ys-input" dir="ltr"
-                   placeholder="رقم الهاتف أو رقم التتبع" autocomplete="off" spellcheck="false">
+                   placeholder="رقم هاتف أو تتبع، أو عدة تتبعات مفصولة بفاصلة" autocomplete="off" spellcheck="false">
             <button type="button" class="icon-btn ys-clear" id="ysClearBtn" title="مسح الحقل" aria-label="مسح الحقل">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -291,10 +295,22 @@
             <tbody id="ysHistoryBody"></tbody>
           </table>
         </div>
-        <p class="sc-hint">يُكتشف نوع الإدخال تلقائيًا (رقم هاتف جزائري أو رقم تتبع). اضغط على أي سطر في السجل لإعادة البحث.<br>تلميح: اضغط <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> في أي صفحة لفتح البحث السريع، و<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> لفتح السجل.</p>
+        <p class="sc-hint">يُكتشف نوع الإدخال تلقائيًا (رقم هاتف جزائري أو رقم تتبع). اضغط على أي سطر في السجل لإعادة البحث، وأيقونة الطابعة بجانب أرقام التتبع لطباعة القسيمة مباشرة.<br>يمكن أيضًا لصق عدة أرقام تتبع كاملة (yal-AB12CD) مفصولة بفاصلة أو فراغ — يفتح زر البحث تبويبًا لكل تتبع والطباعة تفتح قسيمة كل تتبع.<br>تلميح: اضغط <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> في أي صفحة لفتح البحث السريع، و<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> لفتح السجل.</p>
       </div>
     </div>
     <!-- ===== /Tab 3 ===== -->
+
+    <!-- ===== Tab 4: Yalidine Filter ===== -->
+    <div class="tab-panel" id="tab-filter" role="tabpanel" hidden>
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">تصفية ياليدين</span>
+        </div>
+        <div id="ysFilterMount"></div>
+        <p class="sc-hint">حدد الفلاتر ثم اضغط "تصفية" لفتح نتائج ياليدين في تبويب جديد. يمكنك أيضًا فتح هذه النافذة كنافذة عائمة في أي صفحة بالاختصار <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.</p>
+      </div>
+    </div>
+    <!-- ===== /Tab 4 ===== -->
 
     <footer class="app-footer">
       Developed by Zakaria
@@ -305,6 +321,8 @@
   <script src="libs/xlsx.full.min.js"></script>
   <script src="popup.js"></script>
   <script src="shortcuts-ui.js"></script>
+  <script src="filter-core.js"></script>
+  <script src="filter.js"></script>
   <script src="search.js"></script>
 </body>
 </html>

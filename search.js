@@ -83,6 +83,49 @@
     return `${YALIDINE_BASE_URL}?${params.toString()}`;
   }
 
+  // رابط القسيمة (bordereau) — لأرقام التتبع فقط
+  function buildPrintUrl(value) {
+    return `${BORDEREAU_URL}?tracking=${encodeURIComponent(value)}`;
+  }
+
+  // ---------- البحث المتعدد (عدة أرقام تتبع دفعة واحدة) ----------
+  const MAX_MULTI = 30;
+
+  // يقسم الإدخال إلى رموز (فراغات/فاصلة/فاصلة منقوطة/أسطر) ويتطلب لكل رمز تتبعًا كاملًا بصيغة yal-AB12CD
+  function parseMultiTrackings(rawInput) {
+    const tokens = rawInput.split(/[\s,;]+/).map(t => t.trim()).filter(Boolean);
+    if (tokens.length < 2) return null; // رمز واحد => مسار البحث الفردي العادي
+
+    const values = [];
+    for (const t of tokens) {
+      if (/^\+?\d+$/.test(t.replace(/[\s\-()]/g, ''))) {
+        return { error: 'البحث المتعدد متاح لأرقام التتبع فقط. أزل أرقام الهاتف من القائمة.' };
+      }
+      const tracking = normalizeTrackingNumber(t);
+      if (!isValidTrackingNumber(tracking)) {
+        return { error: 'البحث المتعدد يتطلب أرقام تتبع كاملة بصيغة yal-AB12CD. تحقق من: ' + t };
+      }
+      if (!values.includes(tracking)) values.push(tracking);
+    }
+    if (values.length < 2) return null;
+    if (values.length > MAX_MULTI) {
+      return { error: 'الحد الأقصى للكتابة المجمعة هو ' + MAX_MULTI + ' رقمًا في المرة الواحدة.' };
+    }
+    return { list: values };
+  }
+
+  async function addManyToHistory(values) {
+    let history = await getHistory();
+    const set = new Set(values);
+    history = history.filter(item => !set.has(item.value));
+    const now = Date.now();
+    const fresh = values.map(value => ({ value, type: 'tracking', timestamp: now }));
+    history = [...fresh, ...history];
+    if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+    await chrome.storage.local.set({ [HISTORY_KEY]: history });
+    renderHistory();
+  }
+
   // ---------- الرسائل ----------
   function clearMessages() {
     els.error.textContent = '';
@@ -177,10 +220,26 @@
       tr.appendChild(cell('cell-value', item.value));
 
       const typeTd = document.createElement('td');
+      typeTd.className = 'cell-type';
       const badge = document.createElement('span');
       badge.className = 'badge ' + (item.type === 'phone' ? 'badge-phone' : 'badge-tracking');
       badge.textContent = item.type === 'phone' ? 'هاتف' : 'تتبع';
       typeTd.appendChild(badge);
+      if (item.type !== 'phone') {
+        const printBtn = document.createElement('button');
+        printBtn.type = 'button';
+        printBtn.className = 'icon-btn hprint';
+        printBtn.title = 'طباعة القسيمة';
+        printBtn.setAttribute('aria-label', 'طباعة القسيمة');
+        printBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>';
+        printBtn.addEventListener('click', e => {
+          e.preventDefault();
+          e.stopPropagation();
+          chrome.tabs.create({ url: buildPrintUrl(item.value) });
+          addToHistory(item.type, item.value);
+        });
+        typeTd.appendChild(printBtn);
+      }
       tr.appendChild(typeTd);
 
       tr.appendChild(cell('cell-time', formatTime(item.timestamp)));
@@ -190,6 +249,19 @@
 
   // ---------- البحث ----------
   function performSearch() {
+    const multi = parseMultiTrackings(els.input.value);
+    if (multi) {
+      if (multi.error) { showError(multi.error); return; }
+      multi.list.forEach(value => {
+        chrome.tabs.create({ url: buildSearchUrl('tracking', value) });
+      });
+      addManyToHistory(multi.list);
+      clearMessages();
+      els.success.textContent = 'تم فتح ' + multi.list.length + ' نتائج بحث في تبويبات جديدة.';
+      els.input.value = '';
+      return;
+    }
+
     const result = detectAndProcess(els.input.value);
     if (result.error) {
       showError(result.error);
@@ -207,6 +279,19 @@
 
   // ---------- الطباعة (لأرقام التتبع فقط، دائمًا في تبويب جديد) ----------
   function performPrint() {
+    const multi = parseMultiTrackings(els.input.value);
+    if (multi) {
+      if (multi.error) { showError(multi.error); return; }
+      multi.list.forEach(value => {
+        chrome.tabs.create({ url: buildPrintUrl(value) });
+      });
+      addManyToHistory(multi.list);
+      clearMessages();
+      els.success.textContent = 'تم فتح ' + multi.list.length + ' قسيمة طباعة في تبويبات جديدة.';
+      els.input.value = '';
+      return;
+    }
+
     const result = detectAndProcess(els.input.value);
     if (result.error) {
       showError(result.error);
@@ -217,7 +302,7 @@
       return;
     }
 
-    const url = `${BORDEREAU_URL}?tracking=${encodeURIComponent(result.value)}`;
+    const url = buildPrintUrl(result.value);
     chrome.tabs.create({ url });
 
     addToHistory(result.type, result.value);

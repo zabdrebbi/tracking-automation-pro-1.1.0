@@ -10,7 +10,7 @@
 
   const els = {
     tabs: document.querySelectorAll('.tab'),
-    panels: { tracking: byId('tab-tracking'), shortcuts: byId('tab-shortcuts'), search: byId('tab-search') },
+    panels: { tracking: byId('tab-tracking'), shortcuts: byId('tab-shortcuts'), search: byId('tab-search'), filter: byId('tab-filter') },
     formTitle: byId('scFormTitle'),
     abbr: byId('scAbbr'),
     fieldId: byId('scFieldId'),
@@ -250,7 +250,7 @@
 
     const lastTab = await load();
     render();
-    selectTab(['shortcuts', 'search'].includes(lastTab) ? lastTab : 'tracking');
+    selectTab(['shortcuts', 'search', 'filter'].includes(lastTab) ? lastTab : 'tracking');
   }
 
   document.addEventListener('DOMContentLoaded', init);
